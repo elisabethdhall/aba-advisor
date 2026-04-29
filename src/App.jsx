@@ -241,7 +241,8 @@ export default function App() {
     setHist(newHist);
     setBusy(true);
     try {
-      const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: SYS(profile), messages: newHist }) });
+      const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: SYS(profile), messages: newHist }) });
+
       const d = await r.json();
       const reply = d.content?.[0]?.text || "Something went wrong. Please try again.";
       setMsgs([...newMsgs, { role: "assistant", text: reply }]);
