@@ -21,11 +21,11 @@ CORE PHILOSOPHY:
 - Every recommendation considers: patient experience, physician time, team capacity, revenue impact
 
 KEY FRAMEWORKS:
-- Phone calls: Credential the practice, providers, procedures naturally. Use "in fact" phrasing. Close every call. Excitement is contagious
+- Phone calls: Credential the practice, providers, procedures naturally. Use in fact phrasing. Close every call. Excitement is contagious
 - Consultations: Should feel like a second date — patient already knows the practice. Provider sits next to patient. Use their photos plus relevant B&As. Listen to understand. No surprises
 - Pricing: Frame around outcomes not procedures. Financing upfront not last resort. You pay for the outcome not the product
 - Price shoppers: Most are not — they have not been educated. Ask about desired outcomes
-- "I need to think about it": Do not push. If expectations set properly they should not need to think — that is upstream work to improve
+- I need to think about it: Do not push. If expectations set properly they should not need to think — that is upstream work to improve
 - Staff: Hire for personality train for skill. Hire to protect culture. Stay interviews 2-4x per year. Morning huddles. Flexibility matters
 - Performance: Separate behavior from person. Crucial Conversations for hard talks
 - Inventory: Frozen cash with expiration clock. Two-bin system. First in first out. One person owns it
@@ -62,10 +62,10 @@ Practice Name: ${p.name || "Not provided"}
 Market: ${p.market || "Not provided"}
 Zip: ${p.zip || "Not provided"}
 Practice Age: ${p.age || "Not provided"}
-Number of Physicians/Providers: ${p.numProviders || "Not provided"}
+Number of Providers: ${p.numProviders || "Not provided"}
 Other Providers: ${(p.otherProviders || []).join(", ") || "None"}
 Staff Count: ${p.staff || "Not provided"}
-${p.specialty === "Plastic Surgery & Cosmetic Surgery" ? `Coordinator: ${p.coordinator || "Not provided"}` : ""}
+${p.specialty === "Plastic Surgery & Cosmetic Surgery" ? `Coordinator: ${p.coordinator || "Not provided"}` : `Patient Booking Guide: ${p.coordinator || "Not provided"}`}
 Post-Consult Follow-Up: ${p.followup || "Not provided"}
 Monthly Consults: ${p.consultVol || "Not provided"}
 Top Procedures: ${p.procedures || "Not provided"}
@@ -80,7 +80,7 @@ Personal Goals: ${(p.personalGoals || []).join(", ") || "Not provided"}
 Prior Coach: ${p.coach || "Not provided"}
 ${p.specialty === "Plastic Surgery & Cosmetic Surgery" ? `OR Days/Week: ${p.orDays || "Not provided"}` : ""}
 ${p.specialty === "Medical Spa" ? `Total Provider Treatment Hours/Week: ${p.treatmentHours || "Not provided"}` : ""}
-${p.specialty === "Dermatology — Cosmetic & Medical" ? `OR/Procedure Days/Week: ${p.orDays || "Not provided"}` : ""}
+${p.specialty === "Dermatology — Cosmetic & Medical" ? `Procedure Days/Week: ${p.orDays || "Not provided"}` : ""}
 Clinic Days/Week: ${p.clinicDays || "Not provided"}
 Post-Procedure Follow-Up: ${p.postProc || "Not provided"}
 Notes: ${p.notes || "None"}
@@ -227,9 +227,7 @@ export default function App() {
 
   const prog = Math.round((step / 8) * 100);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [msgs, busy]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy]);
 
   useEffect(() => {
     try {
@@ -245,41 +243,20 @@ export default function App() {
 
   const loadSavedProfile = () => {
     const p = savedProfile;
-    setSpecialty(p.specialty || "");
-    setMultiLoc(p.multiLoc || "");
-    setName(p.name || "");
-    setZip(p.zip || "");
-    setRole(p.role || "");
-    setMarket(p.market || "");
-    setAge(p.age || "");
-    setNumProviders(p.numProviders || "");
-    setOtherProviders(p.otherProviders || []);
-    setStaff(p.staff || "");
-    setCoordinator(p.coordinator || "");
-    setFollowup(p.followup || "");
-    setConsultVol(p.consultVol || "");
-    setProcedures(p.procedures || "");
-    setInjectables(p.injectables || "");
-    setLaser(p.laser || "");
-    setCaseValue(p.caseValue || "");
-    setAvgTicket(p.avgTicket || "");
-    setSources(p.sources || []);
-    setAds(p.ads || "");
-    setReviews(p.reviews || "");
-    setChallenges(p.challenges || []);
-    setPersonalGoals(p.personalGoals || []);
-    setCoach(p.coach || "");
-    setOrDays(p.orDays || "");
-    setTreatmentHours(p.treatmentHours || "");
-    setClinicDays(p.clinicDays || "");
-    setPostProc(p.postProc || "");
-    setNotes(p.notes || "");
-    setValues(p.values || []);
+    setSpecialty(p.specialty || ""); setMultiLoc(p.multiLoc || ""); setName(p.name || "");
+    setZip(p.zip || ""); setRole(p.role || ""); setMarket(p.market || "");
+    setAge(p.age || ""); setNumProviders(p.numProviders || ""); setOtherProviders(p.otherProviders || []);
+    setStaff(p.staff || ""); setCoordinator(p.coordinator || ""); setFollowup(p.followup || "");
+    setConsultVol(p.consultVol || ""); setProcedures(p.procedures || ""); setInjectables(p.injectables || "");
+    setLaser(p.laser || ""); setCaseValue(p.caseValue || ""); setAvgTicket(p.avgTicket || "");
+    setSources(p.sources || []); setAds(p.ads || ""); setReviews(p.reviews || "");
+    setChallenges(p.challenges || []); setPersonalGoals(p.personalGoals || []); setCoach(p.coach || "");
+    setOrDays(p.orDays || ""); setTreatmentHours(p.treatmentHours || ""); setClinicDays(p.clinicDays || "");
+    setPostProc(p.postProc || ""); setNotes(p.notes || ""); setValues(p.values || []);
     setProfile(p);
     const greet = p.name ? `Welcome back, ${p.name}.` : "Welcome back.";
     setMsgs([{ role: "assistant", text: `💡 The Insight\n\n${greet} I have your practice profile saved and ready.\n\n🔍 What This Means For You\n\nI remember everything you shared — your specialty, your team, your goals. We can pick up right where we left off.\n\n✅ Your Next Move\n\n• Ask me anything about your practice\n• Use the topic buttons on the left to jump into a specific area\n• Or tell me what has changed since we last spoke` }]);
-    setHist([]);
-    setScreen("advisor");
+    setHist([]); setScreen("advisor");
   };
 
   const submit = () => {
@@ -289,8 +266,7 @@ export default function App() {
     const greet = p.name ? `Welcome, ${p.name}.` : "Welcome.";
     const ch = challenges[0] ? `I can see your focus is on ${challenges[0].toLowerCase()}` : "I have reviewed everything you shared";
     setMsgs([{ role: "assistant", text: `💡 The Insight\n\n${greet} Your practice profile is ready.\n\n🔍 What This Means For You\n\n${ch} — and I am already thinking about the highest-leverage moves for your practice specifically.\n\n✅ Your Next Move\n\n• Ask me anything — conversion, retention, team, marketing, operations, pricing\n• Use the topic buttons on the left to jump into a specific area\n• Or just tell me what is keeping you up at night` }]);
-    setHist([]);
-    setScreen("advisor");
+    setHist([]); setScreen("advisor");
   };
 
   const send = async () => {
@@ -303,7 +279,21 @@ export default function App() {
     setHist(newHist);
     setBusy(true);
     try {
-      const r = await fetch("/api/chat2", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: SYS(profile), messages: newHist }) });
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": "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",
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: SYS(profile),
+          messages: newHist
+        })
+      });
       const d = await r.json();
       const reply = d.content?.[0]?.text || "Something went wrong. Please try again.";
       setMsgs([...newMsgs, { role: "assistant", text: reply }]);
@@ -497,7 +487,7 @@ export default function App() {
           </div>}
           {(isMedSpa || isDerm) && <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 5 }}>Do you have someone dedicated to guiding patients toward booking treatment?</div>
-            <p style={{ fontSize: 11, color: C.textLL, marginBottom: 8, fontStyle: "italic" }}>This could be a Treatment Coordinator, Patient Advocate, Front Desk Lead, or similar role</p>
+            <p style={{ fontSize: 11, color: C.textLL, marginBottom: 8, fontStyle: "italic" }}>Treatment Coordinator, Patient Advocate, Front Desk Lead, or similar role</p>
             {[["primary", "Yes — that is their primary job"], ["manyHats", "We have someone, but it is one of many hats"], ["providerHandles", "No — the provider handles this"], ["feelGap", "No — and we feel the gap"]].map(([v, l]) => <Radio key={v} name="coord" value={v} label={l} checked={coordinator === v} onChange={() => setCoordinator(v)} />)}
           </div>}
           <div style={{ marginBottom: 16 }}>
@@ -595,7 +585,7 @@ export default function App() {
             {["None", "1 day", "2 days", "3 days", "4+ days"].map(v => <Radio key={v} name="ord" value={v} label={v} checked={orDays === v} onChange={() => setOrDays(v)} />)}
           </div>}
           {isMedSpa && <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Roughly how many total provider treatment hours does your practice have per week?</div>
+            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Roughly how many total provider treatment hours per week?</div>
             <p style={{ fontSize: 11, color: C.textLL, marginBottom: 8, fontStyle: "italic" }}>Estimate is fine — add up all providers across all days</p>
             {["Under 20 hours", "20–40 hours", "40–80 hours", "80–120 hours", "120+ hours"].map(v => <Radio key={v} name="th" value={v} label={v} checked={treatmentHours === v} onChange={() => setTreatmentHours(v)} />)}
           </div>}
