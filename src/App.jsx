@@ -6,9 +6,11 @@ const C = {
   textLL: "#A09890", border: "#E8E0D4", borderD: "#D4C8B8", white: "#FFFFFF",
 };
 
+const STORAGE_KEY = "aba_practice_profile";
+
 const SYS = (p) => `You are ABA — Your Aesthetic Business Advisor, a specialized business advisory tool built exclusively for aesthetic medical practices. You are not a general-purpose AI. You are not a clinical tool. You exist for one purpose: to help aesthetic medical practices run more profitable, more efficient, and more fulfilling businesses.
 
-You have been built on 10–15 years of real-world expertise working inside aesthetic medical practices — including plastic surgery, injectables, laser treatments, and medical-grade skincare. You understand how these practices actually operate, where revenue leaks, why staff turns over, and what separates thriving practices from ones that are quietly struggling.
+You have been built on 10-15 years of real-world expertise working inside aesthetic medical practices — including plastic surgery, injectables, laser treatments, and medical-grade skincare. You understand how these practices actually operate, where revenue leaks, why staff turns over, and what separates thriving practices from ones that are quietly struggling.
 
 CORE PHILOSOPHY:
 - Profitability and patient experience are not in tension — they are the same thing
@@ -27,10 +29,11 @@ KEY FRAMEWORKS:
 - Staff: Hire for personality train for skill. Hire to protect culture. Stay interviews 2-4x per year. Morning huddles. Flexibility matters
 - Performance: Separate behavior from person. Crucial Conversations for hard talks
 - Inventory: Frozen cash with expiration clock. Two-bin system. First in first out. One person owns it
-- Metrics monthly: operating expenses, provider productivity, new patient sources specific not just internet, procedure revenue, skincare revenue, percent procedure patients buying skincare, retention, LTV, Google reviews, conversion rates
+- Metrics monthly: operating expenses, provider productivity, new patient sources specific, procedure revenue, skincare revenue, percent procedure patients buying skincare, retention, LTV, Google reviews, conversion rates
 - Post-procedure: No gap ever. Voice memos, care packages, automated texts — patients feel abandoned after surgery booked
 - Reviews: Ask warmly, QR code, make it easy
 - Social/DMs: Meet patients where they are. Never redirect DM to phone call
+- Average ticket spend: A key benchmark for non-surgical practices. If a practice does not know this number, help them think through how to calculate it and why it matters
 
 RESPONSE FORMAT — ALWAYS THIS EXACT STRUCTURE:
 💡 The Insight
@@ -53,29 +56,31 @@ BOUNDARIES:
 - No PHI ever
 
 PRACTICE PROFILE:
-Name: ${p.name || "Not provided"}
 Specialty: ${p.specialty || "Not provided"}
+Role: ${p.role || "Not provided"}
+Practice Name: ${p.name || "Not provided"}
 Market: ${p.market || "Not provided"}
 Zip: ${p.zip || "Not provided"}
 Practice Age: ${p.age || "Not provided"}
-Role: ${p.role || "Not provided"}
-Surgeons: ${p.surgeons || "Not provided"}
+Number of Physicians/Providers: ${p.numProviders || "Not provided"}
 Other Providers: ${(p.otherProviders || []).join(", ") || "None"}
 Staff Count: ${p.staff || "Not provided"}
-Coordinator: ${p.coordinator || "Not provided"}
+${p.specialty === "Plastic Surgery & Cosmetic Surgery" ? `Coordinator: ${p.coordinator || "Not provided"}` : ""}
 Post-Consult Follow-Up: ${p.followup || "Not provided"}
 Monthly Consults: ${p.consultVol || "Not provided"}
 Top Procedures: ${p.procedures || "Not provided"}
 Injectables: ${p.injectables || "Not provided"}
 Laser: ${p.laser || "Not provided"}
-Case Value: ${p.caseValue || "Not provided"}
+${p.specialty === "Plastic Surgery & Cosmetic Surgery" ? `Average Case Value: ${p.caseValue || "Not provided"}` : `Average Ticket Spend Per Visit: ${p.avgTicket || "Not provided"}`}
 Patient Sources: ${(p.sources || []).join(", ") || "Not provided"}
 Paid Ads: ${p.ads || "Not provided"}
 Reviews: ${p.reviews || "Not provided"}
 Challenges: ${(p.challenges || []).join(", ") || "Not provided"}
 Personal Goals: ${(p.personalGoals || []).join(", ") || "Not provided"}
 Prior Coach: ${p.coach || "Not provided"}
-OR Days/Week: ${p.orDays || "Not provided"}
+${p.specialty === "Plastic Surgery & Cosmetic Surgery" ? `OR Days/Week: ${p.orDays || "Not provided"}` : ""}
+${p.specialty === "Medical Spa" ? `Total Provider Treatment Hours/Week: ${p.treatmentHours || "Not provided"}` : ""}
+${p.specialty === "Dermatology — Cosmetic & Medical" ? `OR/Procedure Days/Week: ${p.orDays || "Not provided"}` : ""}
 Clinic Days/Week: ${p.clinicDays || "Not provided"}
 Post-Procedure Follow-Up: ${p.postProc || "Not provided"}
 Notes: ${p.notes || "None"}
@@ -182,6 +187,7 @@ export default function App() {
   const [inp, setInp] = useState("");
   const [busy, setBusy] = useState(false);
   const [hist, setHist] = useState([]);
+  const [savedProfile, setSavedProfile] = useState(null);
   const endRef = useRef(null);
 
   const [specialty, setSpecialty] = useState("");
@@ -191,7 +197,7 @@ export default function App() {
   const [role, setRole] = useState("");
   const [market, setMarket] = useState("");
   const [age, setAge] = useState("");
-  const [surgeons, setSurgeons] = useState("");
+  const [numProviders, setNumProviders] = useState("");
   const [otherProviders, setOtherProviders] = useState([]);
   const [staff, setStaff] = useState("");
   const [coordinator, setCoordinator] = useState("");
@@ -201,6 +207,7 @@ export default function App() {
   const [injectables, setInjectables] = useState("");
   const [laser, setLaser] = useState("");
   const [caseValue, setCaseValue] = useState("");
+  const [avgTicket, setAvgTicket] = useState("");
   const [sources, setSources] = useState([]);
   const [ads, setAds] = useState("");
   const [reviews, setReviews] = useState("");
@@ -208,21 +215,76 @@ export default function App() {
   const [personalGoals, setPersonalGoals] = useState([]);
   const [coach, setCoach] = useState("");
   const [orDays, setOrDays] = useState("");
+  const [treatmentHours, setTreatmentHours] = useState("");
   const [clinicDays, setClinicDays] = useState("");
   const [postProc, setPostProc] = useState("");
   const [notes, setNotes] = useState("");
   const [values, setValues] = useState([]);
 
+  const isPlastic = specialty === "Plastic Surgery & Cosmetic Surgery";
+  const isMedSpa = specialty === "Medical Spa";
+  const isDerm = specialty === "Dermatology — Cosmetic & Medical";
+
   const prog = Math.round((step / 8) * 100);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs, busy]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) setSavedProfile(JSON.parse(saved));
+    } catch {}
+  }, []);
 
   const tog = (arr, set, val, max) => {
     if (arr.includes(val)) set(arr.filter(v => v !== val));
     else if (!max || arr.length < max) set([...arr, val]);
   };
 
+  const loadSavedProfile = () => {
+    const p = savedProfile;
+    setSpecialty(p.specialty || "");
+    setMultiLoc(p.multiLoc || "");
+    setName(p.name || "");
+    setZip(p.zip || "");
+    setRole(p.role || "");
+    setMarket(p.market || "");
+    setAge(p.age || "");
+    setNumProviders(p.numProviders || "");
+    setOtherProviders(p.otherProviders || []);
+    setStaff(p.staff || "");
+    setCoordinator(p.coordinator || "");
+    setFollowup(p.followup || "");
+    setConsultVol(p.consultVol || "");
+    setProcedures(p.procedures || "");
+    setInjectables(p.injectables || "");
+    setLaser(p.laser || "");
+    setCaseValue(p.caseValue || "");
+    setAvgTicket(p.avgTicket || "");
+    setSources(p.sources || []);
+    setAds(p.ads || "");
+    setReviews(p.reviews || "");
+    setChallenges(p.challenges || []);
+    setPersonalGoals(p.personalGoals || []);
+    setCoach(p.coach || "");
+    setOrDays(p.orDays || "");
+    setTreatmentHours(p.treatmentHours || "");
+    setClinicDays(p.clinicDays || "");
+    setPostProc(p.postProc || "");
+    setNotes(p.notes || "");
+    setValues(p.values || []);
+    setProfile(p);
+    const greet = p.name ? `Welcome back, ${p.name}.` : "Welcome back.";
+    setMsgs([{ role: "assistant", text: `💡 The Insight\n\n${greet} I have your practice profile saved and ready.\n\n🔍 What This Means For You\n\nI remember everything you shared — your specialty, your team, your goals. We can pick up right where we left off.\n\n✅ Your Next Move\n\n• Ask me anything about your practice\n• Use the topic buttons on the left to jump into a specific area\n• Or tell me what has changed since we last spoke` }]);
+    setHist([]);
+    setScreen("advisor");
+  };
+
   const submit = () => {
-    const p = { specialty, multiLoc, name, zip, role, market, age, surgeons, otherProviders, staff, coordinator, followup, consultVol, procedures, injectables, laser, caseValue, sources, ads, reviews, challenges, personalGoals, coach, orDays, clinicDays, postProc, notes, values };
+    const p = { specialty, multiLoc, name, zip, role, market, age, numProviders, otherProviders, staff, coordinator, followup, consultVol, procedures, injectables, laser, caseValue, avgTicket, sources, ads, reviews, challenges, personalGoals, coach, orDays, treatmentHours, clinicDays, postProc, notes, values };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch {}
     setProfile(p);
     const greet = p.name ? `Welcome, ${p.name}.` : "Welcome.";
     const ch = challenges[0] ? `I can see your focus is on ${challenges[0].toLowerCase()}` : "I have reviewed everything you shared";
@@ -242,13 +304,12 @@ export default function App() {
     setBusy(true);
     try {
       const r = await fetch("/api/chat2", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: SYS(profile), messages: newHist }) });
-
       const d = await r.json();
       const reply = d.content?.[0]?.text || "Something went wrong. Please try again.";
       setMsgs([...newMsgs, { role: "assistant", text: reply }]);
       setHist([...newHist, { role: "assistant", content: reply }]);
     } catch {
-      setMsgs([...newMsgs, { role: "assistant", text: "Connection error. Please try again." }]);
+      setMsgs([...newMsgs, { role: "assistant", text: "Something went wrong. Please try again." }]);
     }
     setBusy(false);
   };
@@ -267,10 +328,26 @@ export default function App() {
         <p style={{ fontSize: 14, color: C.textL, maxWidth: 460, lineHeight: 1.8, marginBottom: 38, fontWeight: 300 }}>
           Built on years of real-world expertise inside aesthetic medical practices. Personalized to your team, your patients, and your goals.
         </p>
-        <button onClick={() => setScreen("intake")} style={{ background: C.char, color: C.goldL, border: "none", padding: "13px 42px", fontFamily: "inherit", fontSize: 12, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 2 }}>
-          Begin Your Practice Profile
-        </button>
-        <p style={{ marginTop: 12, fontSize: 11, color: C.textLL }}>Takes about 10 minutes · Your answers shape every response</p>
+        {savedProfile && (
+          <div style={{ marginBottom: 16, padding: "16px 24px", background: C.warm, border: `1px solid ${C.border}`, borderRadius: 2, maxWidth: 400, width: "100%" }}>
+            <div style={{ fontSize: 12, color: C.textL, marginBottom: 10 }}>Welcome back — your profile is saved.</div>
+            <div style={{ fontFamily: "Georgia,serif", fontSize: 16, color: C.char, marginBottom: 12 }}>{savedProfile.name || "Your Practice"}</div>
+            <button onClick={loadSavedProfile} style={{ background: C.goldD, color: "white", border: "none", padding: "10px 24px", fontFamily: "inherit", fontSize: 12, fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", borderRadius: 2, width: "100%", marginBottom: 8 }}>
+              Continue as {savedProfile.name || "Your Practice"} →
+            </button>
+            <button onClick={() => setSavedProfile(null)} style={{ background: "none", color: C.textLL, border: "none", fontFamily: "inherit", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}>
+              Start fresh with a new profile
+            </button>
+          </div>
+        )}
+        {!savedProfile && (
+          <>
+            <button onClick={() => setScreen("intake")} style={{ background: C.char, color: C.goldL, border: "none", padding: "13px 42px", fontFamily: "inherit", fontSize: 12, fontWeight: 500, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 2 }}>
+              Begin Your Practice Profile
+            </button>
+            <p style={{ marginTop: 12, fontSize: 11, color: C.textLL }}>Takes about 10 minutes · Your answers shape every response</p>
+          </>
+        )}
       </div>
     </div>
   );
@@ -307,6 +384,7 @@ export default function App() {
             ))}
           </div>
           <div style={{ marginTop: "auto", padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <button onClick={() => setScreen("intake")} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.35)", padding: "6px 10px", fontFamily: "inherit", fontSize: 10, cursor: "pointer", borderRadius: 2, width: "100%", marginBottom: 8 }}>Update My Profile</button>
             <p style={{ fontSize: 9, color: "rgba(255,255,255,0.18)", lineHeight: 1.6 }}>Business strategy only — not clinical, legal, financial, or HR advice.</p>
           </div>
         </aside>
@@ -378,14 +456,12 @@ export default function App() {
         {step === 1 && <div>
           <Head num="Section 1 of 8" title="Practice Identity" />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-            <div><div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 6 }}>Practice Name</div><input style={iStyle} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Clarity Aesthetic Surgery" /></div>
+            <div><div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 6 }}>Practice Name</div><input style={iStyle} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Clarity Aesthetics" /></div>
             <div><div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 6 }}>Zip Code</div><input style={iStyle} value={zip} onChange={e => setZip(e.target.value)} placeholder="e.g. 90210" maxLength={5} /></div>
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Your Primary Role</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {["Surgeon", "Practice Owner", "Practice Manager", "Other"].map(v => <Radio key={v} name="role" value={v} label={v} checked={role === v} onChange={() => setRole(v)} />)}
-            </div>
+            {["Dermatologist Owner", "Surgeon Owner", "Physician (Other) Owner", "RN / NP / PA Owner", "Business Owner", "Practice Manager", "Other"].map(v => <Radio key={v} name="role" value={v} label={v} checked={role === v} onChange={() => setRole(v)} />)}
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Your market?</div>
@@ -395,12 +471,12 @@ export default function App() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
             <div><div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 6 }}>Practice age?</div><Sel value={age} onChange={setAge} opts={["Under 1 year", "1–3 years", "3–10 years", "10+ years"]} /></div>
-            <div><div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 6 }}>Number of surgeons?</div><Sel value={surgeons} onChange={setSurgeons} opts={["Just me", "2–3", "4+"]} /></div>
+            <div><div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 6 }}>Total number of providers?</div><Sel value={numProviders} onChange={setNumProviders} opts={["1", "2–3", "4–6", "7–10", "10+"]} /></div>
           </div>
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Non-surgeon providers? <span style={{ fontWeight: 300, color: C.textLL, fontSize: 11 }}>(select all that apply)</span></div>
+            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Other providers in the practice? <span style={{ fontWeight: 300, color: C.textLL, fontSize: 11 }}>(select all that apply)</span></div>
             <div style={{ display: "flex", flexWrap: "wrap" }}>
-              {["PA", "NP", "RN Injector", "Esthetician/Aesthetician", "None"].map(v => <Chip key={v} value={v} label={v} checked={otherProviders.includes(v)} onChange={() => tog(otherProviders, setOtherProviders, v)} />)}
+              {["Physician", "PA", "NP", "RN", "Esthetician / Aesthetician", "Other"].map(v => <Chip key={v} value={v} label={v} checked={otherProviders.includes(v)} onChange={() => tog(otherProviders, setOtherProviders, v)} />)}
             </div>
           </div>
           <NavBtns onBack={() => setStep(0)} onNext={() => setStep(2)} />
@@ -414,11 +490,16 @@ export default function App() {
               {["1–3", "4–10", "11–20", "20+"].map(v => <Radio key={v} name="stf" value={v} label={v} checked={staff === v} onChange={() => setStaff(v)} />)}
             </div>
           </div>
-          <div style={{ marginBottom: 16 }}>
+          {isPlastic && <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 5 }}>Do you have someone dedicated to walking patients through options and closing bookings?</div>
             <p style={{ fontSize: 11, color: C.textLL, marginBottom: 8, fontStyle: "italic" }}>Patient Coordinator, Treatment Coordinator, Patient Advocate, or Aesthetic Consultant</p>
             {[["primary", "Yes — that is their primary job"], ["manyHats", "We have someone, but it is one of many hats"], ["surgeonHandles", "No — the surgeon or nurse handles this"], ["feelGap", "No — and we feel the gap"]].map(([v, l]) => <Radio key={v} name="coord" value={v} label={l} checked={coordinator === v} onChange={() => setCoordinator(v)} />)}
-          </div>
+          </div>}
+          {(isMedSpa || isDerm) && <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 5 }}>Do you have someone dedicated to guiding patients toward booking treatment?</div>
+            <p style={{ fontSize: 11, color: C.textLL, marginBottom: 8, fontStyle: "italic" }}>This could be a Treatment Coordinator, Patient Advocate, Front Desk Lead, or similar role</p>
+            {[["primary", "Yes — that is their primary job"], ["manyHats", "We have someone, but it is one of many hats"], ["providerHandles", "No — the provider handles this"], ["feelGap", "No — and we feel the gap"]].map(([v, l]) => <Radio key={v} name="coord" value={v} label={l} checked={coordinator === v} onChange={() => setCoordinator(v)} />)}
+          </div>}
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>When a patient consults but does not book, what typically happens next?</div>
             {[["structured", "We have a structured follow-up system"], ["inconsistent", "Someone follows up, but it is inconsistent"], ["notMuch", "Honestly, not much happens"], ["varies", "We are not sure — it varies"]].map(([v, l]) => <Radio key={v} name="fu" value={v} label={l} checked={followup === v} onChange={() => setFollowup(v)} />)}
@@ -435,8 +516,8 @@ export default function App() {
             </div>
           </div>
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 6 }}>Top 3 procedures by volume</div>
-            <input style={iStyle} value={procedures} onChange={e => setProcedures(e.target.value)} placeholder="e.g. Rhinoplasty, Breast Augmentation, Botox" />
+            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 6 }}>Top 3 procedures or services by volume</div>
+            <input style={iStyle} value={procedures} onChange={e => setProcedures(e.target.value)} placeholder={isPlastic ? "e.g. Rhinoplasty, Breast Augmentation, Botox" : isMedSpa ? "e.g. Botox, Filler, Laser" : "e.g. Botox, Filler, Chemical Peels"} />
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Do you offer injectables?</div>
@@ -446,12 +527,18 @@ export default function App() {
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Do you offer laser or energy-based treatments?</div>
             {[["significant", "Yes — a significant part of our practice"], ["minimal", "Yes, but it is minimal"], ["wantToGrow", "No, but we want to grow it"], ["no", "No"]].map(([v, l]) => <Radio key={v} name="las" value={v} label={l} checked={laser === v} onChange={() => setLaser(v)} />)}
           </div>
-          <div style={{ marginBottom: 16 }}>
+          {isPlastic && <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Average surgical case value?</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
               {["$3K–$8K", "$8K–$15K", "$15K–$25K", "$25K+", "It varies widely"].map(v => <Radio key={v} name="cv2" value={v} label={v} checked={caseValue === v} onChange={() => setCaseValue(v)} />)}
             </div>
-          </div>
+          </div>}
+          {(isMedSpa || isDerm) && <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>What is your average patient spend per visit?</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              {["Under $200", "$200–$500", "$500–$1,000", "$1,000–$2,500", "$2,500+", "Not sure"].map(v => <Radio key={v} name="ticket" value={v} label={v} checked={avgTicket === v} onChange={() => setAvgTicket(v)} />)}
+            </div>
+          </div>}
           <NavBtns onBack={() => setStep(2)} onNext={() => setStep(4)} />
         </div>}
 
@@ -488,7 +575,7 @@ export default function App() {
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Beyond growth, what matters most right now? <span style={{ fontWeight: 300, color: C.textLL, fontSize: 11 }}>(up to 2)</span></div>
-            {["Seeing more of the cases I actually love", "Working fewer hours without hurting revenue", "Reducing personal stress and burnout", "Less staff conflict and turnover", "Building something I can eventually sell or step back from", "Feeling more in control of the business side", "I just want the practice to run more smoothly"].map(v => <Radio key={v} type="checkbox" name="pg" value={v} label={v} checked={personalGoals.includes(v)} onChange={() => tog(personalGoals, setPersonalGoals, v, 2)} />)}
+            {["Performing more procedures I love", "Working fewer hours without hurting revenue", "Reducing personal stress and burnout", "Less staff conflict and turnover", "Building something I can eventually sell or step back from", "Feeling more in control of the business side", "I just want the practice to run more smoothly"].map(v => <Radio key={v} type="checkbox" name="pg" value={v} label={v} checked={personalGoals.includes(v)} onChange={() => tog(personalGoals, setPersonalGoals, v, 2)} />)}
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Have you worked with a practice consultant before?</div>
@@ -499,15 +586,22 @@ export default function App() {
 
         {step === 6 && <div>
           <Head num="Section 6 of 8" title="Capacity & Workload" />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 16 }}>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>OR days per week?</div>
-              {["1 day", "2 days", "3 days", "4+ days"].map(v => <Radio key={v} name="ord" value={v} label={v} checked={orDays === v} onChange={() => setOrDays(v)} />)}
-            </div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Clinic / consult days per week?</div>
-              {["1 day", "2 days", "3 days", "4+ days"].map(v => <Radio key={v} name="cld" value={v} label={v} checked={clinicDays === v} onChange={() => setClinicDays(v)} />)}
-            </div>
+          {isPlastic && <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>OR days per week?</div>
+            {["None", "1 day", "2 days", "3 days", "4+ days"].map(v => <Radio key={v} name="ord" value={v} label={v} checked={orDays === v} onChange={() => setOrDays(v)} />)}
+          </div>}
+          {isDerm && <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Procedure / OR days per week?</div>
+            {["None", "1 day", "2 days", "3 days", "4+ days"].map(v => <Radio key={v} name="ord" value={v} label={v} checked={orDays === v} onChange={() => setOrDays(v)} />)}
+          </div>}
+          {isMedSpa && <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Roughly how many total provider treatment hours does your practice have per week?</div>
+            <p style={{ fontSize: 11, color: C.textLL, marginBottom: 8, fontStyle: "italic" }}>Estimate is fine — add up all providers across all days</p>
+            {["Under 20 hours", "20–40 hours", "40–80 hours", "80–120 hours", "120+ hours"].map(v => <Radio key={v} name="th" value={v} label={v} checked={treatmentHours === v} onChange={() => setTreatmentHours(v)} />)}
+          </div>}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>Clinic / consultation days per week?</div>
+            {["1 day", "2 days", "3 days", "4+ days", "Every day"].map(v => <Radio key={v} name="cld" value={v} label={v} checked={clinicDays === v} onChange={() => setClinicDays(v)} />)}
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: C.text, marginBottom: 8 }}>How does your practice handle post-procedure follow-up?</div>
